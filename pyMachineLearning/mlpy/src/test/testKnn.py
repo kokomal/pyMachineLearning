@@ -13,7 +13,7 @@ import os
 import matplotlib
 import matplotlib.pyplot as plt
 
-
+# 测试约会问题的KNN算法
 class MyTest(unittest.TestCase):  # 继承unittest.TestCase
 
     def tearDown(self):

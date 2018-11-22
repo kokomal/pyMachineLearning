@@ -6,6 +6,7 @@ Using Python 3.6.3
 '''
 from numpy import *
 import operator
+from os import listdir
 
 
 def createDataSet():
@@ -65,6 +66,43 @@ def autoNorm(dataSet):
     normDataSet = dataSet - tile(minVals, (m, 1))
     normDataSet = normDataSet / tile(ranges, (m, 1))  # element wise divide
     return normDataSet, ranges, minVals
+
+
+# # 原始图像转换成一维矩阵
+def img2vector(filename):
+    returnVect = zeros((1, 1024))
+    fr = open(filename)
+    for i in range(32):
+        lineStr = fr.readline()
+        for j in range(32):
+            returnVect[0, 32 * i + j] = int(lineStr[j])
+    return returnVect
+
+
+def handwritingClassTest(trainDir, testDir):
+    hwLabels = []
+    trainingFileList = listdir(trainDir)  # load the training set '../test/trainDigits'
+    m = len(trainingFileList)
+    trainingMat = zeros((m, 1024))
+    for i in range(m):
+        fileNameStr = trainingFileList[i]
+        fileStr = fileNameStr.split('.')[0]  # take off .txt
+        classNumStr = int(fileStr.split('_')[0])
+        hwLabels.append(classNumStr)
+        trainingMat[i, :] = img2vector('%s/%s' % (trainDir, fileNameStr))
+    testFileList = listdir(testDir)  # iterate through the test set '../test/testDigits'
+    errorCount = 0.0
+    mTest = len(testFileList)
+    for i in range(mTest):
+        fileNameStr = testFileList[i]
+        fileStr = fileNameStr.split('.')[0]  # take off .txt
+        classNumStr = int(fileStr.split('_')[0])
+        vectorUnderTest = img2vector('%s/%s' % (testDir,fileNameStr))
+        classifierResult = classify0(vectorUnderTest, trainingMat, hwLabels, 3)
+        print("the classifier came back with: %d, the real answer is: %d" % (classifierResult, classNumStr))
+        if (classifierResult != classNumStr): errorCount += 1.0
+    print("\nthe total number of errors is: %d" % errorCount)
+    print("\nthe total error rate is: %f" % (errorCount / float(mTest)))
 
     
 if __name__ == '__main__':
