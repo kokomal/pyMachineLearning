@@ -6,7 +6,7 @@ Using Python 3.6.3
 '''
 import unittest
 import sys
-sys.path.append("..")
+sys.path.append("../../")
 from knn import knn
 from numpy import *
 import os
