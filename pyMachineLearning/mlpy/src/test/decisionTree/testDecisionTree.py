@@ -35,7 +35,7 @@ def genTree():
     return dtree
 
 
-# 测试手写数字的KNN算法
+# 测试决策树算法
 class MyTestDecisionTree(unittest.TestCase):  # 继承unittest.TestCase
 
     def tearDown(self):
