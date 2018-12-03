@@ -149,6 +149,14 @@ class TestBayes(unittest.TestCase):  # 继承unittest.TestCase
         del(xx[2]) 
         print(xx)
         print (sys.version)
+        
+    # 测试最大词频
+    def test_freq(self):
+        listOPosts, listClasses = bayes.loadDataSet()
+        myVocabList = bayes.createVocabList(listOPosts)
+        print(myVocabList)
+        zz = bayes.calcMostFreq(myVocabList, 'haha my steak is food, my problems is garbage')
+        print(zz)
          
 if __name__ == '__main__':
     unittest.main()  # 运行所有的测试用例

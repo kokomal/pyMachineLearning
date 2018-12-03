@@ -93,8 +93,14 @@ def textParse(bigString):  # 输入为巨型文本，输出为词数组，单个
     return [tok.lower() for tok in listOfTokens if len(tok) > 2]  # 头部小写，长度大于2
 
 
-# 垃圾邮件测试
-
+# 测试最大频率
+def calcMostFreq(vocabList, fullText):
+    import operator
+    freqDict = {}
+    for token in vocabList:
+        freqDict[token] = fullText.count(token)
+    sortedFreq = sorted(freqDict.items(), key=operator.itemgetter(1), reverse=True)
+    return sortedFreq[:30]
 
 
 if __name__ == '__main__':
