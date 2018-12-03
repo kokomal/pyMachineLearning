@@ -126,7 +126,7 @@ class TestBayes(unittest.TestCase):  # 继承unittest.TestCase
             randIndex = int(random.uniform(0, len(trainingSet)))
             print("RANDOM IS %d" % randIndex)
             testSet.append(trainingSet[randIndex])
-            del(trainingSet[randIndex]) # 2和3的语法不一样
+            del(list(trainingSet)[randIndex]) # 2和3的语法不一样，这里遵从2.7
         trainMat = []; trainClasses = []
         for docIndex in trainingSet:  # train the classifier (get probs) trainNB0
             trainMat.append(bayes.bagOfWords2VecMN(vocabList, docList[docIndex]))
