@@ -157,6 +157,14 @@ class TestBayes(unittest.TestCase):  # 继承unittest.TestCase
         print(myVocabList)
         zz = bayes.calcMostFreq(myVocabList, 'haha my steak is food, my problems is garbage')
         print(zz)
-         
+     
+    def test_RSS(self):
+        import feedparser
+        nasa = feedparser.parse('http://www.nasa.gov/rss/dyn/image_of_the_day.rss')
+        houston = feedparser.parse('http://sports.yahoo.com/nba/teams/hou/rss.xml')
+        topWords = bayes.getTopWords(nasa, houston)
+        vocabList, pNasa, pHouston = bayes.localWords(nasa, houston)
+        # print(vocabList, pNasa, pHouston)
+            
 if __name__ == '__main__':
     unittest.main()  # 运行所有的测试用例

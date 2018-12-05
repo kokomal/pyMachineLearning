@@ -1,6 +1,6 @@
 # coding:utf-8
 '''
-Created on 2018��11��19��
+Created on 2018-12-4
 Using Python 3.6.3
 @author: chenyuanjun
 '''
@@ -52,7 +52,7 @@ def trainNB0(trainMatrix, trainCategory):
             p0Denom += sum(trainMatrix[i])
     p1Vect = (p1Num / p1Denom)
     p0Vect = (p0Num / p0Denom)
-    print("p0Denom=%d, p1Denom=%d" % (p0Denom, p1Denom))
+    # print("p0Denom=%d, p1Denom=%d" % (p0Denom, p1Denom))
     return p0Vect, p1Vect, pAbusive
 
 
@@ -62,7 +62,7 @@ def trainNB0(trainMatrix, trainCategory):
 def classifyNB(vec2Classify, p0Vec, p1Vec, pClass1):
     p1 = sum(vec2Classify * p1Vec) + log(pClass1)  # element-wise mult
     p0 = sum(vec2Classify * p0Vec) + log(1.0 - pClass1)
-    print("P1=%f, while P0=%f" % (p1, p0))
+    # print("P1=%f, while P0=%f" % (p1, p0))
     if p1 > p0:
         return 1
     else:
@@ -101,6 +101,64 @@ def calcMostFreq(vocabList, fullText):
         freqDict[token] = fullText.count(token)
     sortedFreq = sorted(freqDict.items(), key=operator.itemgetter(1), reverse=True)
     return sortedFreq[:30]
+
+
+# RSS的解析,书中的无法访问，采用
+# NASA Image of the Day：
+# http://www.nasa.gov/rss/dyn/image_of_the_day.rss
+# Yahoo Sports - NBA - Houston Rockets News：
+# http://sports.yahoo.com/nba/teams/hou/rss.xml
+def localWords(feed1, feed0):
+    import feedparser
+    docList = []; classList = []; fullText = []
+    minLen = min(len(feed1['entries']), len(feed0['entries']))
+    for i in range(minLen):
+        wordList = textParse(feed1['entries'][i]['summary'])
+        docList.append(wordList)
+        fullText.extend(wordList)
+        classList.append(1)  # nasa is class 1
+        wordList = textParse(feed0['entries'][i]['summary'])
+        docList.append(wordList)
+        fullText.extend(wordList)
+        classList.append(0)  # houston is class 0
+    vocabList = createVocabList(docList)  # create vocabulary
+    top30Words = calcMostFreq(vocabList, fullText)  # remove top 30 words
+    for pairW in top30Words:
+        if pairW[0] in vocabList: vocabList.remove(pairW[0])
+    trainingSet = range(2 * minLen); testSet = []  # create test set
+    for i in range(10):  # 不够20
+        randIndex = int(random.uniform(0, len(trainingSet)))
+        testSet.append(trainingSet[randIndex])
+        del(list(trainingSet)[randIndex])
+    trainMat = []; trainClasses = []
+    for docIndex in trainingSet:  # train the classifier (get probs) trainNB0
+        trainMat.append(bagOfWords2VecMN(vocabList, docList[docIndex]))
+        trainClasses.append(classList[docIndex])
+    p0V, p1V, pSpam = trainNB0(array(trainMat), array(trainClasses))
+    errorCount = 0
+    for docIndex in testSet:  # classify the remaining items
+        wordVector = bagOfWords2VecMN(vocabList, docList[docIndex])
+        if classifyNB(array(wordVector), p0V, p1V, pSpam) != classList[docIndex]:
+            errorCount += 1
+    print('the error rate is: ', float(errorCount) / len(testSet))
+    return vocabList, p0V, p1V
+
+
+def getTopWords(nasa, houston):
+    import operator
+    vocabList, p0V, p1V = localWords(nasa, houston)
+    topNY = []; topSF = []
+    for i in range(len(p0V)):
+        if p0V[i] > -6.0: topSF.append((vocabList[i], p0V[i]))
+        if p1V[i] > -6.0: topNY.append((vocabList[i], p1V[i]))
+    sortedSF = sorted(topSF, key=lambda pair: pair[1], reverse=True)
+    print("*"*50)
+    for item in sortedSF:
+        print(item[0])
+    sortedNY = sorted(topNY, key=lambda pair: pair[1], reverse=True)
+    print("*"*50)
+    for item in sortedNY:
+        print(item[0])
 
 
 if __name__ == '__main__':
