@@ -7,7 +7,7 @@ Using Python 3.6.3
 import unittest
 import sys
 sys.path.append("../../")
-from knn import knn
+from logisticRegression import logisticRegression
 from numpy import *
 import os
 import matplotlib
@@ -35,7 +35,7 @@ class MyTest(unittest.TestCase):  # 继承unittest.TestCase
         print('STARTING...')
     
     def test_knn(self):
-        print(knn.createDataSet()) 
+        print(logisticRegression.sigmoid(33)) 
    
         
 if __name__ == '__main__':
