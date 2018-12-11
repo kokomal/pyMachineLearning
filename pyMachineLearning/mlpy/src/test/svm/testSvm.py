@@ -13,6 +13,7 @@ import os
 import matplotlib
 import matplotlib.pyplot as plt
 
+
 def loadDataSet(fileName):
     dataMat = []; labelMat = []
     fr = open(fileName)
@@ -20,7 +21,8 @@ def loadDataSet(fileName):
         lineArr = line.strip().split('\t')
         dataMat.append([float(lineArr[0]), float(lineArr[1])])
         labelMat.append(float(lineArr[2]))
-    return dataMat,labelMat
+    return dataMat, labelMat
+
 
 # 测试SVM算法
 class MyTest(unittest.TestCase):  # 继承unittest.TestCase
@@ -50,29 +52,55 @@ class MyTest(unittest.TestCase):  # 继承unittest.TestCase
     def test_clip(self):
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        x=[];y=[]
+        x = [];y = []
         for i in range(100):
             x.append(i)
             j = svm.clipAlpha(i, 40, 20)
             y.append(j)
             print("CLIP %d between 20 and 40 is %d" % (i, j))
-        ax.scatter(x,y)
+        ax.scatter(x, y)
         plt.xlabel('X')
         plt.ylabel('Y')
         plt.show()
         
     def test_loadData(self):
-        dataMat,labelMat = loadDataSet('testSet.txt') # 数据采用1/-1的归类标签
+        dataMat, labelMat = loadDataSet('testSet.txt')  # 数据采用1/-1的归类标签
         print(dataMat)
         print(labelMat)
         
     def test_simpleSMO(self):
-        dataMat,labelMat = loadDataSet('testSet.txt') # 数据采用1/-1的归类标签
+        dataMat, labelMat = loadDataSet('testSet.txt')  # 数据采用1/-1的归类标签
         b, alphas = svm.smoSimple(dataMat, labelMat, 0.6, 0.001, 40)
         print(b)
-        print(alphas[alphas>0])
+        print(alphas[alphas > 0])
         for i in range(100):
             if alphas[i] > 0.0: print(dataMat[i], labelMat[i])
+    
+    def test_fullSMOKernel(self):
+        dataMat, labelMat = loadDataSet('testSet.txt')  # 数据采用1/-1的归类标签
+        b, alphas = svm.smoPKernel(dataMat, labelMat, 0.6, 0.001, 40)
+        print("-"*70)
+        print(b)
+        print(alphas[alphas>0])
+
+    def test_calcWs(self):
+        dataMat, labelMat = loadDataSet('testSet.txt')  # 数据采用1/-1的归类标签
+        b, alphas = svm.smoPKernel(dataMat, labelMat, 0.6, 0.001, 40)
+        ws = svm.calcWs(alphas, dataMat, labelMat)
+        print(ws)
+        
+    def test_nonZero(self):
+        zz = mat([[1,2,0],
+                  [2,3,4],
+                  [4,0,7]])
+        xx = zz[:,0:2].A
+        print(xx)
+        vv = nonzero(xx)
+        print(vv)
+        pp = [1,2,3,4,0,9,8]
+        vv = nonzero(pp)
+        print(vv)
+        
         
 if __name__ == '__main__':
     unittest.main()  # 运行所有的测试用例
