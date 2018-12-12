@@ -2,7 +2,8 @@
 
 from numpy import *
 from time import sleep
-
+# ThanksTo https://www.cnblogs.com/pinard/p/6111471.html
+# 给出的详细的理论推导
 
 # [0,m) 随机数，排除i
 def selectJrand(i, m):
@@ -32,6 +33,7 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
         alphaPairsChanged = 0  # alpha变化次数每次循环都设为0
         for i in range(m):
             fXi = float(multiply(alphas, labelMat).T * (dataMatrix * dataMatrix[i, :].T)) + b
+            # Ei=g(xi)−yi
             Ei = fXi - float(labelMat[i])  # if checks if an example violates KKT conditions
             if ((labelMat[i] * Ei < -toler) and (alphas[i] < C)) or ((labelMat[i] * Ei > toler) and (alphas[i] > 0)):
                 j = selectJrand(i, m)  # 随机选择第二个alpha
@@ -106,13 +108,12 @@ def calcEkKernel(oS, k):
 def selectJKernel(i, oS, Ei):  # this is the second choice -heurstic, and calcs Ej
     maxK = -1; maxDeltaE = 0; Ej = 0
     oS.eCache[i] = [1, Ei]  # set valid #choose the alpha that gives the maximum delta E
-    print(oS.eCache)
     validEcacheList = nonzero(oS.eCache[:, 0].A)[0] # 寻找非0的cache值的key列表
     if (len(validEcacheList)) > 1:
         for k in validEcacheList:  # loop through valid Ecache values and find the one that maximizes delta E
             if k == i: continue  # don't calc for i, waste of time
             Ek = calcEkKernel(oS, k)
-            deltaE = abs(Ei - Ek)
+            deltaE = abs(Ei - Ek) # 找最大的ΔE
             if (deltaE > maxDeltaE):
                 maxK = k; maxDeltaE = deltaE; Ej = Ek
         return maxK, Ej
