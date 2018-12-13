@@ -238,6 +238,7 @@ class PyLouvain:
         _network: a (nodes, edges) pair
     '''
 
+    # network不动，初始化了s_in,s_tot,返回[[node]]复合数组
     def make_initial_partition(self, network): # network=(nodes, edges)
         partition = [[node] for node in network[0]]
         self.s_in = [0 for node in network[0]] # 初始化为[0...0]，这是因为初始化每一个community只有1个成员，因此内部的权重默认为0，再考虑自我指向的情况
