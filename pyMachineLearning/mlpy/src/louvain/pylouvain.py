@@ -121,8 +121,10 @@ class PyLouvain:
             print("pass #%d" % i)
             i += 1
             partition = self.first_phase(network)
+            print("FIRST PARTITION IS ", partition)
             q = self.compute_modularity(partition)
-            partition = [c for c in partition if c]
+            partition = [c for c in partition if c] # 清洗空洞
+            print("AFTER CLEANSE PARTITION IS ", partition)
             # print("%s (%.8f)" % (partition, q))
             # clustering initial nodes with partition
             if self.actual_partition:
@@ -135,9 +137,10 @@ class PyLouvain:
                 self.actual_partition = actual
             else:
                 self.actual_partition = partition
-            if q == best_q:
+            print("ACTUAL PARTITION IS ", self.actual_partition)
+            if q == best_q: # q无法再优化，则退出
                 break
-            network = self.second_phase(network, partition)
+            network = self.second_phase(network, partition) # 更新network
             best_partition = partition
             best_q = q
         return (self.actual_partition, best_q)
@@ -147,7 +150,7 @@ class PyLouvain:
         _partition: a list of lists of nodes
     '''
 
-    def compute_modularity(self, partition):
+    def compute_modularity(self, partition): # Q ec-αc平方
         q = 0
         m2 = self.m * 2
         for i in range(len(partition)):
@@ -161,7 +164,7 @@ class PyLouvain:
         _k_i_in: the sum of the weights of the links from _node to nodes in _c
     '''
 
-    def compute_modularity_gain(self, node, c, k_i_in):
+    def compute_modularity_gain(self, node, c, k_i_in): # deltaQ
         return 2 * k_i_in - self.s_tot[c] * self.k_i[node] / self.m
 
     '''
@@ -171,46 +174,46 @@ class PyLouvain:
 
     def first_phase(self, network):
         # make initial partition
-        best_partition = self.make_initial_partition(network)
+        best_partition = self.make_initial_partition(network) # 初始化的best_partition为完整的nodelist[[]]
         while 1:
             improvement = 0
             for node in network[0]:
-                node_community = self.communities[node]
+                node_community = self.communities[node] # communities是一个[node]，node为序号，value为社区归属
                 # default best community is its own
                 best_community = node_community
                 best_gain = 0
                 # remove _node from its community
-                best_partition[node_community].remove(node)
+                best_partition[node_community].remove(node) # 先将自己的community从best_partition中移走
                 best_shared_links = 0
                 for e in self.edges_of_node[node]:
                     if e[0][0] == e[0][1]:
                         continue
                     if e[0][0] == node and self.communities[e[0][1]] == node_community or e[0][1] == node and self.communities[e[0][0]] == node_community:
                         best_shared_links += e[1]
-                self.s_in[node_community] -= 2 * (best_shared_links + self.w[node])
-                self.s_tot[node_community] -= self.k_i[node]
-                self.communities[node] = -1
+                self.s_in[node_community] -= 2 * (best_shared_links + self.w[node]) # 扣除此原先community的s_in, 2倍边权重 + 自身w权重（自己被除名，因此瓜葛要清算）
+                self.s_tot[node_community] -= self.k_i[node] # s_tot的扣除简单，即扣除k_i即可
+                self.communities[node] = -1 # 待定，尚不清楚新的community是什么，暂记-1
                 communities = {}  # only consider neighbors of different communities
-                for neighbor in self.get_neighbors(node):
-                    community = self.communities[neighbor]
-                    if community in communities:
+                for neighbor in self.get_neighbors(node): # 遍历node所有的neighbor，找到最大的gain
+                    nb_community = self.communities[neighbor]
+                    if nb_community in communities: # 勿重复，因为neighbor可能很多且可能从属于同一个community
                         continue
-                    communities[community] = 1
+                    communities[nb_community] = 1
                     shared_links = 0
-                    for e in self.edges_of_node[node]:
+                    for e in self.edges_of_node[node]: # 算一遍node的边，注意此时nb_community为neighbor所在社区
                         if e[0][0] == e[0][1]:
                             continue
-                        if e[0][0] == node and self.communities[e[0][1]] == community or e[0][1] == node and self.communities[e[0][0]] == community:
+                        if e[0][0] == node and self.communities[e[0][1]] == nb_community or e[0][1] == node and self.communities[e[0][0]] == nb_community:
                             shared_links += e[1]
                     # compute modularity gain obtained by moving _node to the community of _neighbor
-                    gain = self.compute_modularity_gain(node, community, shared_links)
+                    gain = self.compute_modularity_gain(node, nb_community, shared_links) # 新人加入，2倍shared_links，gain少除了一次m，但无伤大雅
                     if gain > best_gain:
-                        best_community = community
+                        best_community = nb_community
                         best_gain = gain
                         best_shared_links = shared_links
                 # insert _node into the community maximizing the modularity gain
-                best_partition[best_community].append(node)
-                self.communities[node] = best_community
+                best_partition[best_community].append(node) # 最优归属
+                self.communities[node] = best_community # 确定最终communities
                 self.s_in[best_community] += 2 * (best_shared_links + self.w[node])
                 self.s_tot[best_community] += self.k_i[node]
                 if node_community != best_community:
@@ -230,7 +233,8 @@ class PyLouvain:
                 continue
             if e[0][0] == node:
                 yield e[0][1]
-            if e[0][1] == node:
+            #if e[0][1] == node:
+            else: # 简易修复冗余代码
                 yield e[0][0]
 
     '''
@@ -238,9 +242,10 @@ class PyLouvain:
         _network: a (nodes, edges) pair
     '''
 
-    # network不动，初始化了s_in,s_tot,返回[[node]]复合数组
+    # network不动，初始化了s_in,s_tot,返回[[node]]复合数组作为初始partition
     def make_initial_partition(self, network): # network=(nodes, edges)
         partition = [[node] for node in network[0]]
+        print("INITIALLY， THE PARTITION IS ", partition)
         self.s_in = [0 for node in network[0]] # 初始化为[0...0]，这是因为初始化每一个community只有1个成员，因此内部的权重默认为0，再考虑自我指向的情况
         self.s_tot = [self.k_i[node] for node in network[0]] # 初始化为ki
         for e in network[1]:
@@ -256,11 +261,13 @@ class PyLouvain:
     '''
 
     def second_phase(self, network, partition):
-        nodes_ = [i for i in range(len(partition))]
+        nodes_ = [i for i in range(len(partition))] # 缩编的新的nodes，连续
+        # print("SECOND PHASE ", nodes_)
         # relabelling communities
         communities_ = []
         d = {}
         i = 0
+        print("OLD COMMUNITY " , self.communities)
         for community in self.communities:
             if community in d:
                 communities_.append(d[community])
@@ -269,24 +276,25 @@ class PyLouvain:
                 communities_.append(i)
                 i += 1
         self.communities = communities_
+        print("NEW COMMUNITY " , self.communities) # 归一化community，原先序号是按照原始的node节点贴标签的，现在要精简化
         # building relabelled edges
         edges_ = {}
         for e in network[1]:
-            ci = self.communities[e[0][0]]
+            ci = self.communities[e[0][0]] # 现在的ci和cj都是新的community归属的标签
             cj = self.communities[e[0][1]]
             try:
                 edges_[(ci, cj)] += e[1]
             except KeyError:
                 edges_[(ci, cj)] = e[1]
-        edges_ = [(k, v) for k, v in edges_.items()]
+        edges_ = [(k, v) for k, v in edges_.items()] # 这样一来nodes和edges已经重新算好了
         # recomputing k_i vector and storing edges by node
-        self.k_i = [0 for n in nodes_]
+        self.k_i = [0 for n in nodes_] # 接下来算权重和ki，还有各个节点的边
         self.edges_of_node = {}
-        self.w = [0 for n in nodes_]
+        self.w = [0 for n in nodes_] # 自有权重w复位
         for e in edges_:
             self.k_i[e[0][0]] += e[1]
             self.k_i[e[0][1]] += e[1]
-            if e[0][0] == e[0][1]:
+            if e[0][0] == e[0][1]: # 自己指向自己，则w要递增
                 self.w[e[0][0]] += e[1]
             if e[0][0] not in self.edges_of_node:
                 self.edges_of_node[e[0][0]] = [e]

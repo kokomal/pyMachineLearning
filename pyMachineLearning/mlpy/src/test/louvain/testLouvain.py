@@ -39,7 +39,7 @@ class PylouvainTest(unittest.TestCase):
         self.assertEqual(4, len(partition))
         self.assertEqual(4298, math.floor(q_))
         self.assertEqual(4299, math.ceil(q_))
-        print(partition)
+        print("FINAL PARTITON IS " , partition)
 
     def test_lesmis(self):
         pyl = PyLouvain.from_gml_file("data/lesmis.gml")
