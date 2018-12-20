@@ -1,0 +1,6 @@
+user01,in,user02,5
+user01,in,user02,7
+user01,out,user03,9
+user02,in,user01,8
+user03,out,user02,1
+user04,in,user01,5
