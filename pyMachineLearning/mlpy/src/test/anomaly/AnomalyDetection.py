@@ -6,14 +6,19 @@ from matplotlib import pyplot as plt
 from scipy import io as spio
 
 '''异常检测主运行程序'''
+# 基本原理为：
+# 1. 选择训练数据集，获得均值和方差mu和sigma2
+# 2. 利用上述的方差和均值，在交叉验证集CV上（里面含有一部分的故障节点），获得CV的多元高斯概率密度集pCV
+# 3. 采用F1Score法获取最优epsilon
+# 4. 根据测试数据集Test，获得高斯概率密度集pTest，直接筛选epsilon，高于则入围，低于则判定故障
 
 
 def anomalyDetection_example():
     '''加载并显示数据'''
     data = spio.loadmat('data1.mat')
-    #print(data)
+    # print(data)
     X = data['X']
-    #print('raw data: ', X, 'shape=', len(X))
+    # print('raw data: ', X, 'shape=', len(X))
     plt = display_2d_data(X, 'bx')
     plt.title("origin data")
     plt.show()
@@ -61,7 +66,7 @@ def multivariateGaussian(X, mu, Sigma2):
     if (Sigma2.shape[0] > 1):
         Sigma2 = np.diag(Sigma2)
     '''多元高斯分布函数'''    
-    #print('SIGMA2', Sigma2)
+    # print('SIGMA2', Sigma2)
     X = X - mu
     print(X.shape)
     argu = (2 * np.pi) ** (-k / 2) * np.linalg.det(Sigma2) ** (-0.5)
@@ -75,7 +80,7 @@ def multivariateGaussian(X, mu, Sigma2):
     x = -0.5 * np.sum(Z, axis=1)
     print(x)
     p = argu * np.exp(x)  # axis表示每行
-    return p # 返回的是[],以每行的数据进行高斯法计算
+    return p  # 返回的是[],以每行的数据进行高斯法计算
 
     
 # 可视化边界
