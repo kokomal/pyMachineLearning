@@ -79,6 +79,7 @@ class PageRank():
         return cls(nodeset, edges)
         
     def __init__(self, nodeset, edges):
+        self.N = len(nodeset)
         self.nodeset = nodeset
         self.edges = edges
         self.sorted_node_index_map = {}
@@ -93,22 +94,52 @@ class PageRank():
     def genAdjacentMatrix(self):
         N = len(self.sorted_nodes)
         rawMat = np.eye(N) # 防止全0列
+        rawMatT = np.eye(N) # 防止全0列
         for edgeTup in self.edges.keys():
             frm = edgeTup[0]
             to = edgeTup[1]
             wt = self.edges[edgeTup]
             frmIdx = self.sorted_node_index_map[frm]
             toIdx = self.sorted_node_index_map[to]
-            print('edgeTup', edgeTup)
-            print('wt', wt)
             rawMat[toIdx][toIdx] = 0
             rawMat[frmIdx][toIdx] = wt
-        print(rawMat) 
+            rawMatT[frmIdx][frmIdx] = 0
+            rawMatT[toIdx][frmIdx] = wt     
         norm = np.linalg.norm(rawMat, axis=0, ord=1)  # 标准化，求得各个列的和
-        # print(norm)
+        #print(norm)
         rawMat = rawMat / norm
-        return rawMat
+        normT = np.linalg.norm(rawMatT, axis=0, ord=1)  # 标准化，求得各个列的和
+        #print(normT)
+        rawMatT = rawMatT / normT
+        return rawMat,rawMatT
 
+    def pageRank(self, callerOrCallee='caller', eps=1.0e-8, d=0.85):
+        rawMat,rawMatT = self.genAdjacentMatrix()
+        if callerOrCallee == 'caller':
+            M = rawMat
+        else:
+            M = rawMatT
+        v = np.random.rand(self.N, 1)  # N*1
+        # print(v)
+        norm = np.linalg.norm(v, 1)  # 标准化
+        # print(norm)
+        v = v / norm
+        # print("---NORMALIZED NORM---")
+        # print(v)
+        last_v = np.ones((self.N, 1), dtype=np.float32) * 100
+        M_hat = (d * M) + (((1 - d) / self.N) * np.ones((self.N, self.N), dtype=np.float32))  # 一次性处理相邻矩阵M即可
+        print("M-Hat")
+        print(M_hat)
+        iter = 1
+        while np.linalg.norm(v - last_v, 2) > eps:
+            iter += 1
+            last_v = v
+            v = np.matmul(M_hat, v)
+        print("ITER = %d" % iter)
+        for nd in self.sorted_node_index_map.keys():
+            print("USER-%s Rank is %f" % (nd, v[self.sorted_node_index_map[nd]][0]))
+        return v
+    
 
     # 简易绘制交互图
     def draw(self, picName):
@@ -117,8 +148,9 @@ class PageRank():
             G.add_edge(k[0], k[1], weight=self.edges[k])
         # nx.draw(G, node_size=300, with_labels=True)
         # nx.draw(G, pos=nx.spring_layout(G), node_color='r', edge_color='g', with_labels=True, font_size=18, node_size=300)
-        pos = nx.spring_layout(G)  # positions for all nodes
-        nx.draw_networkx_nodes(G, pos, node_size=500)
+        pos = nx.shell_layout(G)  # positions for all nodes
+        nx.draw_networkx_nodes(G, pos, node_size=300)
+        nx.draw_networkx_labels(G, pos, font_size=6, font_family='sans-serif')
         # 根据权重，实线为权值大的边，虚线为权值小的边
         # edges
         elarge = [(u, v) for (u, v, d) in G.edges(data=True) if d['weight'] > 10]
@@ -126,12 +158,10 @@ class PageRank():
         # labels标签定义
         edge_labels = dict([((u, v,), d['weight']) for u, v, d in G.edges(data=True)])
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-        
-        nx.draw_networkx_labels(G, pos, font_size=8, font_family='sans-serif')
         nx.draw_networkx_edges(G, pos, edgelist=elarge,
-                            width=4, edge_color='r', arrows=True, arrowsize=6)
+                             edge_color='b', arrows=True, width=3)         
         nx.draw_networkx_edges(G, pos, edgelist=esmall,
-                            edge_color='b', style='dashed')
+                             edge_color='g', arrows=True, width=1)
         plt.axis('off')
         plt.savefig(picName)
         plt.show()

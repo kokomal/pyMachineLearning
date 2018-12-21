@@ -63,6 +63,14 @@ class TestPageRank(unittest.TestCase):  # 继承unittest.TestCase
                            [6, 8, 5]])
         eps = np.linalg.norm(v - last_v, 2)  # √x1^2+x2^2+...
         print(eps)
+    
+    def test_dict(self):
+        dic = {'a':31, 'bc':5, 'c':3, 'asd':4, 'aa':74, 'd':0}
+        sorted_dict = sorted(dic.items(), key=lambda d:d[0]) 
+        print(dic)
+        print(sorted_dict)
+        print(type(dic))
+        print(type(sorted_dict))
 
     def test_draw(self):
         # !-*- coding:utf8-*-
@@ -181,23 +189,61 @@ class TestPageRank(unittest.TestCase):  # 继承unittest.TestCase
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
         nx.draw(G, pos, node_color=values, node_size=1500, edge_color=edge_colors, edge_cmap=plt.cm.Reds)
         pylab.show()
+    
+    def test_draw6(self):
+        # coding=utf-8
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        def height(x, y):
+            return (1 - x / 2 + x ** 5 + y ** 3) * np.exp(-x ** 2 - y ** 2)
+
+        x = np.linspace(-3, 3, 300)
+        y = np.linspace(-3, 3, 300)
+        X, Y = np.meshgrid(x, y)
+        plt.contourf(X, Y, height(X, Y), 10, alpha=0.75, cmap=plt.cm.hot)
+        # 为等高线填充颜色 10表示按照高度分成10层 alpha表示透明度 cmap表示渐变标准
+        C = plt.contour(X, Y, height(X, Y), 10, colors='black')
+        # 使用contour绘制等高线
+        plt.clabel(C, inline=True, fontsize=10)
+        # 在等高线处添加数字
+        plt.xticks(())
+        plt.yticks(())
+        # 去掉坐标轴刻度
+        plt.show()
+        # 显示图片
 
     def test_pgrk(self):
         pg = PageRank.fetchFromCSV('test.csv')
         pg.draw('pic.png')
     
-    def test_pgrkAlgo(self):
+    def test_pgrkAlgo1(self):
         pg = PageRank.fetchFromCSV('test.csv')
-        mhat = pg.genAdjacentMatrix()
+        mhat, mhatT = pg.genAdjacentMatrix()
         print(mhat)
+        print(mhatT)
         
-    def test_dict(self):
-        dic = {'a':31, 'bc':5, 'c':3, 'asd':4, 'aa':74, 'd':0}
-        sorted_dict= sorted(dic.items(), key=lambda d:d[0]) 
-        print(dic)
-        print(sorted_dict)
-        print(type(dic))
-        print(type(sorted_dict))
+    def test_pgrkAlgo2(self):
+        pg = PageRank.fetchFromCSV('test.csv')
+        pg.draw('pic.png')
+        res = pg.pageRank(d=0.85)
+        print(sum(res))
+        print('=' * 70)
+        res = pg.pageRank(callerOrCallee='callee', d=0.85)
+        print(sum(res))
+
+    def test_matrix(self):
+        import numpy as np
+        cc = np.array([[1,2],[2,3],[3,4]])
+        ee = np.array([[1,0],[0,3]])
+        dd = np.array([[1,2],[2,3],[3,4]])
+        print(cc * dd)
+        print(np.dot(cc,ee)*dd)
+        
+        matc = np.matrix(cc)
+        mate = np.matrix(ee)
+        print(matc*mate)
+        
 
 if __name__ == '__main__':
     unittest.main()  # 运行所有的测试用例
