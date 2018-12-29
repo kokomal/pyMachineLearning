@@ -273,7 +273,7 @@ class Communities:
 
         # edges
         nx.draw_networkx_edges(G,pos,edgelist=exist_edges, width=2,alpha=1,edge_color='k')
-        nx.draw_networkx_edges(G,pos,edgelist=removed_edges, width=2, edge_color='k')   #, style='dashed')
+        nx.draw_networkx_edges(G,pos,edgelist=removed_edges, width=2, edge_color='k', style='dashed')
 
         # labels
         nx.draw_networkx_labels(G,pos,font_size=12,font_family='sans-serif')
