@@ -1,8 +1,10 @@
+# coding:utf-8
 """
 Author: Lingzhe Teng
 Date: Nov. 15, 2015
 
 """
+from sqlalchemy.dialects.postgresql.hstore import idx_precedence
 
 """
 Executing code: 
@@ -25,13 +27,12 @@ from operator import mul
 import networkx as nx
 import os
 import sys
-#import community
+# import community
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import matplotlib.colors as mpcolors
 import matplotlib.cm as mpcm
 import numpy as np
-
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """                            3rd-party Libraries                               """
@@ -53,7 +54,9 @@ Ref: https://gist.github.com/shobhit/3236373
 
 """
 
+
 class Communities:
+
     def __init__(self, ipt_txt, ipt_png):
         self.ipt_txt = ipt_txt
         self.ipt_png = ipt_png
@@ -67,49 +70,58 @@ class Communities:
         self.graph = nx.Graph()
         # load data
         self.load_txt(self.ipt_txt)
-
         
     """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
     """                               Main Functions                                 """
     """                                                                              """    
     """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
     def find_best_partition(self):
         from community import community_louvain
         G = self.graph.copy()
-        modularity = 0.0
+        modularity = -float('inf') 
         removed_edges = []
         partition = {}
+        cou = 0
         while 1:
-            betweenness = self.calculte_betweenness(G)
-            max_betweenness_edges = self.get_max_betweenness_edges(betweenness)
-            if len(G.edges()) == len(max_betweenness_edges):
+            cou += 1
+            betweenness = self.calculte_betweenness(G)  # 1.算介度
+            max_betweenness_edges = self.get_max_betweenness_edges(betweenness)  # 2.根据介度算最大介度的边的集合
+            if len(G.edges()) == len(max_betweenness_edges): # 介度全部都一样，退出
                 break
 
-            G.remove_edges_from(max_betweenness_edges)  
-            components = nx.connected_components(G)
+            G.remove_edges_from(max_betweenness_edges)  # 将最大介度的边全部移除
+            components = nx.connected_components(G) # 获得连通的所有components
             idx = 0
             tmp_partition = {}
             for component in components:
                 for inner in list(component):
-                    tmp_partition.setdefault(inner, idx)
+                    tmp_partition.setdefault(inner, idx) # 先获得暂时的分区，按顺序递增
                 idx += 1
-            cur_mod = community_louvain.modularity(tmp_partition, G)
-
-            if cur_mod < modularity:
+                print('IDX=', idx)
+            cur_mod = community_louvain.modularity(tmp_partition, G) # 调用louvain的模块算模块度
+            print("CUR MOD=", cur_mod, 'while modularity=', modularity)
+            if cur_mod < modularity: # 模块度小了，说明不能再划分，则此次分割无效，要补回去，并且退出
                 G.add_edges_from(max_betweenness_edges)
                 break;
             else:
                 partition = tmp_partition
-            removed_edges.extend(max_betweenness_edges)
+            #partition = tmp_partition
+            removed_edges.extend(max_betweenness_edges) # 删掉的最大介度的边集合，不断更新
             modularity = cur_mod
+            self.display(partition)
+        print('COUNT', cou)
         return partition, G, removed_edges
 
     def get_max_betweenness_edges(self, betweenness):
+        print('btw', betweenness)
         max_betweenness_edges = []
         max_betweenness = max(betweenness.items(), key=lambda x: x[1])
+        print('MB-',max_betweenness)
         for (k, v) in betweenness.items():
             if v == max_betweenness[1]:
                 max_betweenness_edges.append(k)
+        print('MBE--', max_betweenness_edges)
         return max_betweenness_edges
 
     def calculte_betweenness(self, G, bonus=True):
@@ -130,6 +142,7 @@ class Communities:
     """                               Bonus Functions                                """
     """                                                                              """    
     """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
     def build_level(self, G, root):
         """ 
         Build level for graph
@@ -148,27 +161,27 @@ class Communities:
         predecessors = {}
         successors = {}
 
-        cur_level_nodes = [root]    # initialize start point
+        cur_level_nodes = [root]  # initialize start point
         nodes = []  # store nodes that have been accessed
-        level_idx = 0       # track level index
+        level_idx = 0  # track level index
         while cur_level_nodes:  # if have nodes for a level, continue process
-            nodes.extend(cur_level_nodes)   # add nodes that are inside new level into nodes list
-            levels.setdefault(level_idx, cur_level_nodes)   # set nodes for current level
-            next_level_nodes = []   # prepare nodes for next level
+            nodes.extend(cur_level_nodes)  # add nodes that are inside new level into nodes list
+            levels.setdefault(level_idx, cur_level_nodes)  # set nodes for current level
+            next_level_nodes = []  # prepare nodes for next level
 
             # find node in next level
-            for node in cur_level_nodes:
-                nei_nodes = G.neighbors(node)   # all neighbors for the node in current level
+            for node in cur_level_nodes:  # 初始化为root的所有neighbor
+                nei_nodes = G.neighbors(node)  # all neighbors for the node in current level
                 
                 # find neighbor nodes in the next level
                 for nei_node in nei_nodes:
-                    if nei_node not in nodes:   # nodes in the next level must not be accessed
-                        predecessors.setdefault(nei_node, [])   # initialize predecessors dictionary, use a list to store all predecessors
+                    if nei_node not in nodes:  # nodes in the next level must not be accessed
+                        predecessors.setdefault(nei_node, [])  # initialize predecessors dictionary, use a list to store all predecessors
                         predecessors[nei_node].append(node) 
-                        successors.setdefault(node, [])     # initialize successors dictionary, use a list to store all successors
+                        successors.setdefault(node, [])  # initialize successors dictionary, use a list to store all successors
                         successors[node].append(nei_node)
 
-                        if nei_node not in next_level_nodes:    # avoid add same node twice
+                        if nei_node not in next_level_nodes:  # avoid add same node twice
                             next_level_nodes.append(nei_node)
             cur_level_nodes = next_level_nodes
             level_idx += 1
@@ -183,19 +196,19 @@ class Communities:
         edges_credit = {}
 
         # loop, from bottom to top, not including the zero level
-        for lvl_idx in range(len(levels)-1, 0, -1):
-            lvl_nodes = levels[lvl_idx]     # get nodes in the level
+        for lvl_idx in range(len(levels) - 1, 0, -1): # 从底向上遍历，不包括root
+            lvl_nodes = levels[lvl_idx]  # get nodes in the level 获得每一层的节点集合
 
             # calculate for each node in current level
-            for lvl_node in lvl_nodes:
-                nodes_credit.setdefault(lvl_node, 1.)   # set default credit for the node, 1
-                if lvl_node in successors.keys():        # if it is not a leaf node Deprecated has_key
+            for lvl_node in lvl_nodes: # 在这一层，遍历其所有的节点
+                nodes_credit.setdefault(lvl_node, 1.)  # set default credit for the node, 1
+                if lvl_node in successors.keys():  # if it is not a leaf node 叶节点不可能有successor
                     # Each node that is not a leaf gets credit = 1 + sum of credits of the DAG edges from that node to level below
                     for successor in successors[lvl_node]:
                         nodes_credit[lvl_node] += edges_credit[(successor, lvl_node)]
 
                 node_predecessors = predecessors[lvl_node]  #  get predecessors of the node in current level
-                total_nodes_nsp = .0    # total number of shortest paths for predecessors of the node in current level
+                total_nodes_nsp = .0  # total number of shortest paths for predecessors of the node in current level
                 
                 # sum up for total_nodes_nsp
                 for predecessor in node_predecessors:
@@ -203,10 +216,9 @@ class Communities:
 
                 # again, calculate for the weight of each predecessor, and assign credit for the responding edge
                 for predecessor in node_predecessors:
-                    predecessor_weight = nodes_nsp[predecessor]/total_nodes_nsp     # calculate weight of predecssor
-                    edges_credit.setdefault((lvl_node, predecessor), nodes_credit[lvl_node]*predecessor_weight)         # bottom-up edge
+                    predecessor_weight = nodes_nsp[predecessor] / total_nodes_nsp  # calculate weight of predecssor 两次循环仅为算nsp的占比
+                    edges_credit.setdefault((lvl_node, predecessor), nodes_credit[lvl_node] * predecessor_weight)  # bottom-up edge
         return nodes_credit, edges_credit
-
 
     def my_betweenness_calculation(self, G, normalized=False):
         """
@@ -215,25 +227,27 @@ class Communities:
         """
         graph_nodes = G.nodes()
         edge_contributions = {}
-        components = list(nx.connected_components(G))   # connected components for current graph
-
+        rw = nx.connected_components(G)  # 获得连通图的list
+        components = list(rw)  # connected components for current graph
         # calculate for each node
         for node in graph_nodes:
-            component = None    # the community current node belongs to
+            # print('NODE', node)
+            component = None  # the community current node belongs to
             for com in components: 
                 if node in list(com):
-                    component = list(com)
+                    component = list(com)  # 找到了该节点对应的社区，出于效率应该break[本人备注]
+                    break
             nodes_nsp = {}  # number of shorest paths
-            node_levels, predecessors, successors = self.build_level(G, node)   # build levels for calculation
-
+            node_levels, predecessors, successors = self.build_level(G, node)  # build levels for calculation
+            #print('==LEVELS==', node_levels, '==PRED==', predecessors, '==SUCC==', successors)
             # calculate shortest paths for each node (including current node)
-            for other_node in component:
-                shortest_paths = nx.all_shortest_paths(G, source=node,target=other_node)
-                nodes_nsp[other_node] = len(list(shortest_paths))
+            for each_node in component:
+                shortest_paths = nx.all_shortest_paths(G, source=node, target=each_node)  # dijkstra法获得node出发的所有最短路径
+                nodes_nsp[each_node] = len(list(shortest_paths))  # 获得各个节点的介数
 
             # calculate credits for nodes and edges (Only use "edges_credit" actually)
             nodes_credit, edges_credit = self.calculate_credits(G, node_levels, predecessors, successors, nodes_nsp)
-
+            # print('EDGE-CREDITS', edges_credit)
             # sort tuple (key value of edges_credit), and sum up for edge_contributions
             for (k, v) in edges_credit.items():
                 k = sorted(k, reverse=False)
@@ -243,19 +257,21 @@ class Communities:
            
         # divide by 2 to get true betweenness
         for (k, v) in edge_contributions.items():
-            edge_contributions[k] = v/2
+            edge_contributions[k] = v / 2
 
         # normalize
         if normalized:
             max_edge_contribution = max(edge_contributions.values())
             for (k, v) in edge_contributions.items():
-                edge_contributions[k] = v/max_edge_contribution
+                edge_contributions[k] = v / max_edge_contribution
+        # print('EDGE-CONTRIB', edge_contributions)
         return edge_contributions
 
     """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
     """                               Plot Method                                    """
     """                                                                              """    
     """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
     def plot_graph(self, part_graph, removed_edges):
         from functools import reduce
         G = self.graph
@@ -263,20 +279,25 @@ class Communities:
         exist_edges = part_graph.edges(data=True)
         pos = nx.spring_layout(G, k=0.1, iterations=50, scale=1.3)
         
+        co = {1:'r', 2:'b', 3:'g', 4:'black', 5:'cyan',6:'orange'}
+        idx = 1
         # nodes
         coms = nx.connected_components(part_graph)
         for com in coms:
             nodes = list(com) 
-            np.random.seed( len(nodes)*sum(nodes)*reduce(mul, nodes, 1)*min(nodes)*max(nodes) )
-            colors = np.random.rand(4 if len(nodes)<4 else len(nodes)+1)
-            nx.draw_networkx_nodes(G,pos,nodelist=nodes,node_size=500, node_color=colors)
+            print("NODES are ", nodes)
+            #np.random.seed(len(nodes) * sum(nodes) * reduce(mul, nodes, 1) * min(nodes) * max(nodes))
+            colors = np.random.rand(4 if len(nodes) < 4 else len(nodes))
+            colors = co[idx]
+            idx+=1
+            nx.draw_networkx_nodes(G, pos, nodelist=nodes, node_size=500, node_color=colors)
 
         # edges
-        nx.draw_networkx_edges(G,pos,edgelist=exist_edges, width=2,alpha=1,edge_color='k')
-        nx.draw_networkx_edges(G,pos,edgelist=removed_edges, width=2, edge_color='k', style='dashed')
+        nx.draw_networkx_edges(G, pos, edgelist=exist_edges, width=2, alpha=1, edge_color='k')
+        nx.draw_networkx_edges(G, pos, edgelist=removed_edges, width=2, edge_color='k', style='dashed')
 
         # labels
-        nx.draw_networkx_labels(G,pos,font_size=12,font_family='sans-serif')
+        nx.draw_networkx_labels(G, pos, font_size=12, font_family='sans-serif')
 
         plt.axis('off')
         plt.savefig(self.ipt_png)
@@ -314,6 +335,7 @@ class Communities:
 
     def partition_to_community(self, partition):
         result = {}
+        print("PARTITION", partition)
         for (k, v) in partition.items():
             result.setdefault(v, [])
             result[v].append(k)
@@ -321,12 +343,14 @@ class Communities:
 
     def display(self, partition):
         comms = self.partition_to_community(partition)
+        print('COMMS', comms)
         for comm in comms:
-            comm.sort() # actually duplicate process here
+            comm.sort()  # actually duplicate process here
             print (comm)
 
     def quit(self, err_desc):
-        raise SystemExit('\n'+ "PROGRAM EXIT: " + err_desc + ', please check your input' + '\n')
+        raise SystemExit('\n' + "PROGRAM EXIT: " + err_desc + ', please check your input' + '\n')
+
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """                               Main Method                                    """

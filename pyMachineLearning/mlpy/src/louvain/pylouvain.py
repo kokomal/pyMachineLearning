@@ -6,7 +6,7 @@
     Ouput: a (partition, modularity) pair where modularity is maximum
 '''
 
-
+eps = 0.05
 class PyLouvain:
 
     '''
@@ -138,7 +138,9 @@ class PyLouvain:
             else:
                 self.actual_partition = partition
             print("ACTUAL PARTITION IS ", self.actual_partition)
-            if q == best_q:  # q无法再优化，则退出
+            errr = abs(q - best_q)
+            print('err--', errr)
+            if errr < eps:  # q无法再优化，则退出
                 break
             network = self.second_phase(network, partition)  # 更新network
             #best_partition = partition
