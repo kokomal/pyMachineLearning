@@ -6,7 +6,12 @@
     Ouput: a (partition, modularity) pair where modularity is maximum
 '''
 
+# 对Louvain进行魔改：
+# 1.增加内部节点和外部节点的对比map
+# 2.增加绘图功能
 eps = 0.05
+
+
 class PyLouvain:
 
     '''
@@ -37,9 +42,9 @@ class PyLouvain:
         print(edges)
         print("="*70)
         # rebuild graph with successive identifiers
-        nodes_, edges_ = in_order(nodes, edges)
+        nodes_, edges_, nodes, edges, old_to_new_node_map = in_order(nodes, edges)
         print("%d nodes, %d edges" % (len(nodes_), len(edges_)))
-        return cls(nodes_, edges_)
+        return cls(nodes_, edges_, nodes, edges, old_to_new_node_map)
 
     '''
         Builds a graph from _path.
@@ -72,9 +77,9 @@ class PyLouvain:
                 edges.append(((current_edge[0], current_edge[1]), 1))
                 current_edge = (-1, -1, 1)
                 in_edge = 0
-        nodes, edges = in_order(nodes, edges)
+        nodes_, edges_, nodes, edges, old_to_new_node_map = in_order(nodes, edges)
         print("%d nodes, %d edges" % (len(nodes), len(edges)))
-        return cls(nodes, edges)
+        return cls(nodes_, edges_, nodes, edges, old_to_new_node_map)
 
     '''
         Initializes the method.
@@ -82,16 +87,19 @@ class PyLouvain:
         _edges: a list of ((int, int), weight) pairs
     '''
 
-    def __init__(self, nodes, edges):
-        self.nodes = nodes
-        self.edges = edges
+    def __init__(self, nodes_, edges_, raw_nodes, raw_edges, old_to_new_node_map):
+        self.nodes = nodes_
+        self.edges = edges_
+        self.raw_nodes = raw_nodes
+        self.raw_edges = raw_edges
+        self.old_to_new_node_map = old_to_new_node_map
         # precompute m (sum of the weights of all links in network)
         #            k_i (sum of the weights of the links incident to node i)
         self.m = 0
-        self.k_i = [0 for n in nodes]
+        self.k_i = [0 for n in nodes_]
         self.edges_of_node = {}
-        self.w = [0 for n in nodes]
-        for e in edges:
+        self.w = [0 for n in nodes_]
+        for e in edges_:
             self.m += e[1]  # 每一条边的权重都叠加
             self.k_i[e[0][0]] += e[1]  # 边的两端都叠加计算，Ki为节点i的连接边所有权重之和
             self.k_i[e[0][1]] += e[1]  # 同上
@@ -105,16 +113,16 @@ class PyLouvain:
             elif e[0][0] != e[0][1]:
                 self.edges_of_node[e[0][1]].append(e)
         # access community of a node in O(1) time
-        self.communities = [n for n in nodes]
+        self.communities = [n for n in nodes_]
         self.actual_partition = []
 
     '''
         Applies the Louvain method.
     '''
 
-    def apply_method(self):
+    def apply_method(self, draw=False):
         network = (self.nodes, self.edges)
-        #best_partition = [[node] for node in network[0]]
+        # best_partition = [[node] for node in network[0]]
         best_q = -1
         i = 1
         while 1:
@@ -143,9 +151,41 @@ class PyLouvain:
             if errr < eps:  # q无法再优化，则退出
                 break
             network = self.second_phase(network, partition)  # 更新network
-            #best_partition = partition
+            # best_partition = partition
             best_q = q
-        return (self.actual_partition, best_q)
+        self.finalPartit = []
+        for part in self.actual_partition:
+            nPart = []
+            for mem in part:
+                nPart.append(self.old_to_new_node_map[mem])
+            self.finalPartit.append(nPart)
+        if draw:
+            self.draw('demo.png')
+        return (self.actual_partition, self.finalPartit, best_q)
+
+    def draw(self, ipt_png):
+        import networkx as nx
+        import numpy as np
+        import matplotlib.pyplot as plt
+        G = nx.Graph()
+        for e in self.raw_edges:
+            G.add_edge(e[0][0], e[0][1], weight=e[1])
+        pos = nx.spring_layout(G, k=0.1, iterations=50, scale=1.3)
+        co = {1:'r', 2:'b', 3:'g', 4:'cyan', 5:'purple', 6:'orange', 7:'yellow', 8:'darkgreen'}
+        idx = 1
+        # nodes
+        for nodes in self.finalPartit:
+            # np.random.seed(len(nodes) * sum(nodes) * reduce(mul, nodes, 1) * min(nodes) * max(nodes))
+            colors = np.random.rand(4 if len(nodes) < 4 else len(nodes))
+            colors = co[idx]
+            idx += 1
+            nx.draw_networkx_nodes(G, pos, nodelist=nodes, node_size=500, node_color=colors)
+        # edges
+        nx.draw_networkx_edges(G, pos, edgelist=G.edges(data=True), width=2, alpha=1, edge_color='k')
+        # labels
+        nx.draw_networkx_labels(G, pos, font_size=12, font_family='sans-serif')
+        plt.axis('off')
+        plt.savefig(ipt_png)
 
     '''
         Computes the modularity of the current network.
@@ -235,8 +275,8 @@ class PyLouvain:
                 continue
             if e[0][0] == node:
                 yield e[0][1]
-            # if e[0][1] == node:
-            else:  # 简易修复冗余代码
+            if e[0][1] == node:
+            #else:  # 简易修复冗余代码
                 yield e[0][0]
 
     '''
@@ -320,18 +360,21 @@ class PyLouvain:
 
 def in_order(nodes, edges):
         # rebuild graph with successive identifiers
-        nodes = list(nodes.keys())
-        nodes.sort()
+        nfnodes = list(nodes.keys())
+        nfnodes.sort()
+        print(nfnodes)
         print("="*80)
-        print(nodes)
         i = 0
         nodes_ = []
         d = {}
-        for n in nodes:
+        old_to_new_node_map = {}
+        for n in nfnodes:
+            old_to_new_node_map[i] = n
             nodes_.append(i)
             d[n] = i
             i += 1
         edges_ = []
         for e in edges:
             edges_.append(((d[e[0][0]], d[e[0][1]]), e[1]))
-        return (nodes_, edges_)
+        print(old_to_new_node_map)
+        return (nodes_, edges_, nfnodes, edges, old_to_new_node_map)

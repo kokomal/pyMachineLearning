@@ -54,7 +54,7 @@ Ref: https://gist.github.com/shobhit/3236373
 
 """
 
-
+eps = 1e-7
 class Communities:
 
     def __init__(self, ipt_txt, ipt_png):
@@ -83,7 +83,7 @@ class Communities:
         removed_edges = []
         partition = {}
         cou = 0
-        while 1:
+        while cou < 40:
             cou += 1
             betweenness = self.calculte_betweenness(G)  # 1.算介度
             max_betweenness_edges = self.get_max_betweenness_edges(betweenness)  # 2.根据介度算最大介度的边的集合
@@ -101,7 +101,7 @@ class Communities:
                 print('IDX=', idx)
             cur_mod = community_louvain.modularity(tmp_partition, G) # 调用louvain的模块算模块度
             print("CUR MOD=", cur_mod, 'while modularity=', modularity)
-            if cur_mod < modularity: # 模块度小了，说明不能再划分，则此次分割无效，要补回去，并且退出
+            if cur_mod < modularity:# or abs(cur_mod - modularity) < eps: # 模块度小了，说明不能再划分，则此次分割无效，要补回去，并且退出
                 G.add_edges_from(max_betweenness_edges)
                 break;
             else:
@@ -220,7 +220,7 @@ class Communities:
                     edges_credit.setdefault((lvl_node, predecessor), nodes_credit[lvl_node] * predecessor_weight)  # bottom-up edge
         return nodes_credit, edges_credit
 
-    def my_betweenness_calculation(self, G, normalized=False):
+    def my_betweenness_calculation(self, G, normalized=True):
         """
         Main Bonus Function to calculation betweenness
 
@@ -279,7 +279,7 @@ class Communities:
         exist_edges = part_graph.edges(data=True)
         pos = nx.spring_layout(G, k=0.1, iterations=50, scale=1.3)
         
-        co = {1:'r', 2:'b', 3:'g', 4:'black', 5:'cyan',6:'orange'}
+        co = {1:'r', 2:'b', 3:'g', 4:'cyan', 5:'purple',6:'orange',7:'yellow',8:'darkgreen'}
         idx = 1
         # nodes
         coms = nx.connected_components(part_graph)
@@ -288,7 +288,7 @@ class Communities:
             print("NODES are ", nodes)
             #np.random.seed(len(nodes) * sum(nodes) * reduce(mul, nodes, 1) * min(nodes) * max(nodes))
             colors = np.random.rand(4 if len(nodes) < 4 else len(nodes))
-            colors = co[idx]
+            colors = co[1 + idx % len(co)]
             idx+=1
             nx.draw_networkx_nodes(G, pos, nodelist=nodes, node_size=500, node_color=colors)
 
@@ -320,7 +320,7 @@ class Communities:
 
             ending_node_a = int(line[0])
             ending_node_b = int(line[1])
-            self.graph.add_edge(ending_node_a, ending_node_b, weight=0.6, len=3.0)
+            self.graph.add_edge(ending_node_a, ending_node_b, weight=2.0, len=3.0)
 
     def display_graph(self):
         G = self.graph
