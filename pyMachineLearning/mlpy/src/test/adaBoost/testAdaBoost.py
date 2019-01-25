@@ -38,12 +38,12 @@ class TestAdaBoost(unittest.TestCase):  # 继承unittest.TestCase
 
     @classmethod
     def tearDownClass(self):
-    # 必须使用 @ classmethod装饰器, 所有test运行完后运行一次
-         print('FINISHED...')
+        # 必须使用 @ classmethod装饰器, 所有test运行完后运行一次
+        print('FINISHED...')
 
     @classmethod
     def setUpClass(self):
-    # 必须使用@classmethod 装饰器,所有test运行前运行一次
+        # 必须使用@classmethod 装饰器,所有test运行前运行一次
         print('STARTING...')
     
     def test_loadDataSet(self):
@@ -58,9 +58,10 @@ class TestAdaBoost(unittest.TestCase):  # 继承unittest.TestCase
     def test_adaBoostClassify(self):
         datMat, classLabels = loadSimpData()
         classifyArr = adaBoost.adaBoostTrainDS(datMat, classLabels, 9)
-        print(adaBoost.adaClassify([0,0], classifyArr))
+        print(adaBoost.adaClassify([0, 0], classifyArr))
         print("-"*60)
-        print(adaBoost.adaClassify([[5,5], [0,0]], classifyArr))
+        print(adaBoost.adaClassify([[5, 5], [0, 0]], classifyArr))
+
            
 if __name__ == '__main__':
     unittest.main()  # 运行所有的测试用例
