@@ -10,7 +10,7 @@ import sys
 sys.path.append("../../")
 from regressionTree import regTrees
 import numpy as np
-
+from tkinter import *
 
 class MyTest(unittest.TestCase):  # 继承unittest.TestCase
 
@@ -64,7 +64,35 @@ class MyTest(unittest.TestCase):  # 继承unittest.TestCase
         myDat1 = np.mat(myDat1)
         regTree = regTrees.createTree(myDat1, ops=(10000,4)) # 手动调参比较敏感
         print(regTree)
-
+        
+    # 模型树
+    def test_createTreeEx3(self):
+        myDat1 = regTrees.loadDataSet('exp2.txt')   
+        myDat1 = np.mat(myDat1)
+        regTree = regTrees.createTree(myDat1, regTrees.modelLeaf, regTrees.modelErr, (1,10)) 
+        print(regTree)
+        
+    # bike测速
+    def test_bike(self):
+        trainMat = np.mat(regTrees.loadDataSet('bikeTrain.txt'))    
+        testMat = np.mat(regTrees.loadDataSet('bikeTest.txt')) 
+        #print(testMat, trainMat)
+        myTree = regTrees.createTree(trainMat, ops=(1,20)) # 回归树
+        yHat = regTrees.createForeCast(myTree, testMat[:,0])
+        r1 = np.corrcoef(yHat, testMat[:,1], rowvar=0)[0,1]
+        print(r1) # 回归树的相关系数
+        print("-"*80)
+        myTree = regTrees.createTree(trainMat, regTrees.modelLeaf, regTrees.modelErr, (1,20)) # 模型树
+        yHat = regTrees.createForeCast(myTree, testMat[:,0], regTrees.modelTreeEval)
+        r2 = np.corrcoef(yHat, testMat[:,1], rowvar=0)[0,1]
+        print(r2) # 模型树的相关系数
+    
+    def test_tkinter(self):
+        root = Tk()
+        mylabel = Label(root, text='hello world')
+        mylabel.grid()
+        root.mainloop()
+    
 if __name__ == '__main__':
     unittest.main()  # 运行所有的测试用例
     
