@@ -36,21 +36,6 @@ def lwlrTest(testArr, xArr, yArr, k=1.0):  # loops over all the data points and 
     return yHat
 
 
-def ridgeTest(xArr, yArr):
-    xMat = mat(xArr); yMat = mat(yArr).T
-    yMean = mean(yMat, 0)
-    yMat = yMat - yMean  # to eliminate X0 take mean off of Y
-    # regularize X's
-    xMeans = mean(xMat, 0)  # calc mean then subtract it off
-    xVar = var(xMat, 0)  # calc variance of Xi then divide by it
-    xMat = (xMat - xMeans) / xVar  # 标准化
-    numTestPts = 30
-    wMat = zeros((numTestPts, shape(xMat)[1]))
-    for i in range(numTestPts):
-        ws = linearRegression.ridgeRegres(xMat, yMat, exp(i - 10))
-        wMat[i, :] = ws.T
-    return wMat
-
 def scrapePage(inFile,outFile,yr,numPce,origPrc):
     from bs4 import BeautifulSoup
     fr = open(inFile); fw=open(outFile,'a') #a is append mode writing
@@ -160,7 +145,7 @@ class MyTest(unittest.TestCase):
 
     def test_ridge(self):
         abX, abY = loadDataSet('abalone.txt')
-        ridgeWeights = ridgeTest(abX, abY)
+        ridgeWeights = linearRegression.ridgeTest(abX, abY)
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.plot(ridgeWeights)
@@ -204,3 +189,6 @@ class MyTest(unittest.TestCase):
         print(lgX1)
         ws = linearRegression.standRegres(lgX1, lgY)
         print(ws)
+        linearRegression.crossValidation(lgX, lgY)
+        print("="*80)
+        print(linearRegression.ridgeTest(lgX, lgY)) # 通过输出的回归系数，可以进行取舍，避免噪声干扰，例如此案例，就最好用第四和第二个参数进行操作
