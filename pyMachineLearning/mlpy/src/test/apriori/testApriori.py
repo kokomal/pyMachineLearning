@@ -12,20 +12,33 @@ from numpy import *
 import os
 import matplotlib
 import matplotlib.pyplot as plt
+import votesmart
 
-S={'A','B','C'}
+S = {'A', 'B', 'C'}
+
 
 def move(D, frm, to):
     print('Moving Disk of Size %d from %s to %s' % (D, frm, to))
+
 
 def hannoi(D, frm, to):
     if (D == 1):
         move(D, frm, to)
         return
-    inner = (list(S - {frm} - {to}))[0] # 丑陋的取{A,B,C}除frm和to之外的第三者
+    inner = (list(S - {frm} - {to}))[0]  # 丑陋的取{A,B,C}除frm和to之外的第三者
     hannoi(D - 1, frm, inner)
     move(D, frm, to)
     hannoi(D - 1, inner, to)
+
+
+def loadBill(fileName):  # general function to parse tab -delimited floats
+    dataMat = []  # assume last column is target value
+    fr = open(fileName)
+    for line in fr.readlines():
+        curLine = line.strip().split('\t')
+        fltLine = list(map(float, curLine))  # map all elements to float()
+        dataMat.append(fltLine)
+    return dataMat
 
     
 class MyTest(unittest.TestCase):
@@ -72,6 +85,23 @@ class MyTest(unittest.TestCase):
         rules = apriori.generateRules(L, suppData, minConf=0.5)  # 降低一点
         print(rules)
 
-
     def test_hnt(self):
         hannoi(5, 'A', 'C')
+
+    # api key 获取不了，fail
+    def test_bill(self):
+        votesmart.votesmart.apikey = 'a7fa40adec6f4a77178799fae4441030'
+        bills = votesmart.votesmart.votes.getBillsByStateRecent()
+        print(bills)
+        
+    def test_loadBill(self):
+        pass
+    
+    def test_mushroom(self):
+        mushdataset = [line.split() for line in open('mushroom.dat').readlines()]
+        L, suppData = apriori.apriori(mushdataset, minSupport=0.3)
+        for item in L[1]:
+            if item.intersection({'2'}):print(item)
+        print('-'*80)
+        for item in L[3]:
+            if item.intersection({'2'}):print(item)    
