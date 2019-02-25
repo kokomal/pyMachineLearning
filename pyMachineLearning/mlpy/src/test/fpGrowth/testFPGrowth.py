@@ -74,5 +74,7 @@ class MyFPGrowthTree(unittest.TestCase):  # 继承unittest.TestCase
         myFreqList = []
         fpGrowth.mineTree(myFPtree, myHeaderTab, 30000, set([]), myFreqList)
         print(myFreqList)
+
+
 if __name__ == '__main__':
     unittest.main()  # 运行所有的测试用例
