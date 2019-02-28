@@ -182,6 +182,8 @@ class MyTest(unittest.TestCase):  # 继承unittest.TestCase
             if sign(predict) != sign(labelArr[i]): errorCount += 1    
         print("the test error rate is: %f" % (float(errorCount) / m)) 
 
+    def test_tens(self):
+        import tensorflow as tf
            
 if __name__ == '__main__':
     unittest.main()  # 运行所有的测试用例
