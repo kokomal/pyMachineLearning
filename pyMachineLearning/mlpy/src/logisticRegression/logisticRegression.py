@@ -5,12 +5,13 @@ import numpy as np
 # 如此一来，某一条数据的各个维度的向量的权重就已经知悉，那么根据新数据的输入，乘以weight向量，求sigmoid即可清楚此数据为哪一个标签
 
 # deprecated,在inX极小的时候会造成overflow
-# def sigmoid(inX):  # sigmoid仅返回(0,1)区间的浮点值
-#    return 1.0 / (1 + np.exp(-inX))
+def sigmoidOld(inX):  # sigmoid仅返回(0,1)区间的浮点值
+   return 1.0 / (1 + np.exp(-inX))
 
 
 # thanks to simon
 def sigmoid(value):
+    print(value)
     if -value > np.log(np.finfo(type(value)).max):
         return 0.0    
     a = np.exp(-value)
@@ -35,7 +36,7 @@ def gradAscent(dataMatIn, classLabels):  # 输入1：m*n;输入2：n*1
     maxCycles = 500
     weights = np.ones((n, 1)) # weight n*1
     for k in range(maxCycles):  # heavy on matrix operations
-        h = sigmoid(dataMatrix * weights)  # dataMatrix*weight = m*n * n*1 = m*1 基本上非0即1
+        h = sigmoidOld(dataMatrix * weights)  # dataMatrix*weight = m*n * n*1 = m*1 基本上非0即1
         error = (labelMat - h)  # 如果算出来的h与label有偏差，则多退少补，即如果error为正，则亏了，要补上；反之亦然
         # 当然如果error已经达标，说明收敛，则无需跑完所有循环 error = m*1
         weights = weights + alpha * dataMatrix.transpose() * error  # 更新weight权重 n*m * m*1= n*1

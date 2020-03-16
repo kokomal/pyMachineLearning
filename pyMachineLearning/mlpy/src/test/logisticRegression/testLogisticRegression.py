@@ -105,12 +105,14 @@ class MyTest(unittest.TestCase):  # 继承unittest.TestCase
                 errorCount += 1
         errorRate = (float(errorCount)/numTestVec)
         print("the error rate of this test is: %f" % errorRate)
+        frTrain.close()
+        frTest.close()
         return errorRate
     
     def multiTest(self):
         numTests = 10; errorSum = 0.0
         for k in range(numTests):
-            errorSum += test_colic()
+            errorSum += self.test_colic()
         print("after %d iterations the average error rate is: %f" % (numTests, errorSum/float(numTests)))
     
 if __name__ == '__main__':
