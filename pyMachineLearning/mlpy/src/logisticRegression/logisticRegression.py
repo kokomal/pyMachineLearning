@@ -28,9 +28,10 @@ def sigmoid2(inX):
 
 
 # 梯度上升法，求最小
-def gradAscent(dataMatIn, classLabels):  # 输入1：m*n;输入2：n*1
+def gradAscent(dataMatIn, classLabels):  # 输入1：m*n;输入2：1*n
     dataMatrix = np.mat(dataMatIn)  # m*n
-    labelMat = np.mat(classLabels).transpose()  # labelMat 1*n
+    labelMat = np.mat(classLabels).transpose()  # labelMat n*1
+    print(np.shape(labelMat))
     m, n = np.shape(dataMatrix)
     alpha = 0.001
     maxCycles = 500

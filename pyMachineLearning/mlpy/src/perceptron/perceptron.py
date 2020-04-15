@@ -118,5 +118,5 @@ if __name__ == "__main__":
     # call the animator. blit=true means only re-draw the parts that have changed.
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(history), interval=1000, repeat=False,
                                    blit=True)
-    plt.show()
+    # plt.show()
     anim.save('D:/perceptron2.gif',fps=2, writer='imagemagick') # 似乎需要安装ImageMagick

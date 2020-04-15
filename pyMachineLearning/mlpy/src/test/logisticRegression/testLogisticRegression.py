@@ -54,6 +54,8 @@ class MyTest(unittest.TestCase):  # 继承unittest.TestCase
     
     def test_logReg(self):
         dataMat, labelMat = load()
+        print(dataMat)
+        print(labelMat)
         wt = logisticRegression.gradAscent(dataMat, labelMat)
         print(wt)
     

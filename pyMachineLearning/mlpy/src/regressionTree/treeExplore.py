@@ -1,7 +1,7 @@
 from numpy import *
 
 from tkinter import *
-import regTrees
+from regressionTree import regTrees
 
 import matplotlib
 matplotlib.use('TkAgg')
